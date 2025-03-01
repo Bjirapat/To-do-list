@@ -1,23 +1,96 @@
-function run() {
-    const show_list = document.getElementById('list');
-    const add_text = document.getElementById('addtext');
-    if (add_text.value == "") {
-        alert("no information");
-        return;
-    }
-    const ul_list = document.createElement('li');
-    ul_list.textContent = add_text.value;
-    ul_list.classList.add('fade-in');
+document.addEventListener("DOMContentLoaded", function () {
+  const addText = document.getElementById("addtext");
+  const addButton = document.getElementById("btadd");
+  const list = document.getElementById("list");
+  const clearBtn = document.getElementById("clearBtn");
+  const clock = document.getElementById("clock");
 
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-    ul_list.onclick = function () {
-        ul_list.classList.add('fade-out');
-        ul_list.addEventListener('animationend', function () {
-            show_list.removeChild(ul_list);
-        });
+  function saveTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }
+
+  function addTask(taskText) {
+    if (taskText.trim() === "") return;
+    const task = {
+      text: taskText,
+      completed: false,
     };
+    tasks.push(task);
+    saveTasks();
+    addListElement(task);
+    addText.value = "";
+  }
 
-    show_list.appendChild(ul_list);
-    add_text.value = '';
-}
+  function addListElement(task) {
+    const listItem = document.createElement("li");
 
+    const taskTextSpan = document.createElement("span");
+    taskTextSpan.textContent = task.text;
+    if (task.completed) {
+      taskTextSpan.classList.add("completed");
+    }
+    listItem.appendChild(taskTextSpan);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("delete-btn");
+    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    deleteButton.addEventListener("click", () => {
+      tasks = tasks.filter((t) => t.text !== task.text);
+      saveTasks();
+      listItem.remove();
+    });
+
+    listItem.addEventListener("click", () => {
+      task.completed = !task.completed;
+      taskTextSpan.classList.toggle("completed");
+      saveTasks();
+    });
+
+    listItem.appendChild(deleteButton);
+    list.appendChild(listItem);
+  }
+
+  function loadTasks() {
+    list.innerHTML = "";
+    tasks.forEach((task) => addListElement(task));
+  }
+
+  addButton.addEventListener("click", () => {
+    addTask(addText.value);
+  });
+
+  addText.addEventListener("keypress", (event) => {
+    if (event.key === "Enter") {
+      addTask(addText.value);
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    tasks = [];
+    saveTasks();
+    loadTasks();
+  });
+
+  function getThaiTime() {
+    const now = new Date();
+    const options = {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Bangkok",
+    };
+    return now.toLocaleTimeString("th-TH", options);
+  }
+
+  function updateClock() {
+    clock.textContent = getThaiTime();
+  }
+
+  setInterval(updateClock, 1000);
+
+  updateClock();
+  loadTasks();
+});
